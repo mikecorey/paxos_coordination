@@ -43,9 +43,9 @@ router.get('/move/:agentId/:locX/:locY', function(req,res) {
    winston.log('info', 'Agent ' + agentId + ' moving to (' + locX + ',' + locY + ')');
    res.status(200).send('ok');
 });
-
+/*
 router.use(function(req, res) {
     res.redirect(301, 'http://127.0.0.1' + req.originalUrl);
 });
-
+*/
 module.exports = router;
