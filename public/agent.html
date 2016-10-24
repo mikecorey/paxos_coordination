@@ -68,7 +68,7 @@
     
     var centerLatLong = waypoints[0];
 
-    var agentInit = httpGet('http://localhost:3000/agent/initialize/' + waypoints[0].lat + '/' + waypoints[0].lng);
+    var agentInit = httpGet('/agent/initialize/' + waypoints[0].lat + '/' + waypoints[0].lng);
     var agentInitJSON = JSON.parse(agentInit);
     var id = agentInitJSON.id;
     
