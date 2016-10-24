@@ -3,16 +3,31 @@ var winston = require('winston');
 
 var router = express.Router();
 
+/* MODEL SHOULD BE SOMEWHERE ELSE... */
 
-var model = require('../models/model');
+function Agent (id, lat, lng) {
+    console.log('made an agent');
+    this.id = id;
+    this.lat = lat;
+    this.lng = lng;
+    this.mailbox = new Array();
+}
+
+function Message (timestamp, fromAgent, toAgent, message) {
+    this.timestamp = timestamp;
+    this.fromAgent = fromAgent;
+    this.toAgent = toAgent;
+    this.message = message;
+}
+
+var agents = new Array();
+
+var maxComDistance = .048;
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
   res.render('index', { title: 'ExprAess' });
 });
-
-
-
 
 router.get('/agent/status/:agentId', function(req, res) {
    var agentId = parseInt(req.params.agentId, 10);
@@ -21,16 +36,18 @@ router.get('/agent/status/:agentId', function(req, res) {
 });
 
 function canCommunicate(toAgent, fromAgent) {
-    var result = true;
-    winston.log('debug', 'comm');
+    var agentDistance = Math.sqrt(Math.pow(agents[toAgent].lat - agents[fromAgent].lat, 2) + Math.pow(agents[toAgent].lng - agents[fromAgent].lng, 2)); 
+    var result = agentDistance <= maxComDistance; 
+    winston.log('debug', 'Coms from ' + fromAgent + ' to ' + toAgent + ': ' + result);
     return result;
 }
 
-router.get('/agent/initialize', function(req, res) {
-    var locX = Math.floor(Math.random() * 10);
-    var locY = Math.floor(Math.random() * 10);
-    var agent = new model.Agent(locX, locY);
-    model.agents.push(agent);
+router.get('/agent/initialize/:lat/:lng', function(req, res) {
+    var id = agents.length;
+    var lat = parseFloat(req.params.lat);
+    var lng = parseFloat(req.params.lng);
+    var agent = new Agent(id, lat, lng);
+    agents.push(agent);
     res.send(JSON.stringify(agent));
 });
 
@@ -41,7 +58,7 @@ router.get('/agent/remove/:agentId', function(req, res) {
 });*/
 
 router.get('/list', function(req, res) {
-   res.render('agents', {agentArray : JSON.stringify(model.agents)}); 
+   res.render('agents', {agentArray : JSON.stringify(agents)}); 
 });
 
 
@@ -61,9 +78,9 @@ router.get('/agent/communicate/:fromAgent/:toAgent/:message', function(req, res)
 
 router.get('/agent/updateLoc/:agentId/:locX/:locY', function(req,res) {
    var agentId = parseInt(req.params.agentId, 10);
-   var locX = parseInt(req.params.locX, 10);
-   var locY = parseInt(req.params.locY, 10);
-   winston.log('info', 'Agent ' + agentId + ' is at (' + locX + ',' + locY + ')');
+   var locX = parseFloat(req.params.locX, 10);
+   var locY = parseFloat(req.params.locY, 10);
+   winston.log('trace', 'Agent ' + agentId + ' is at (' + locX + ',' + locY + ')');
    res.status(200).send('ok');
 });
 
@@ -76,6 +93,10 @@ router.get('/agent/getMessages/:agentId/:flush?', function(req,res) {
 
 
 /*tollolololol*/
+
+router.get('/someunexista*', function(req,res) {
+    res.status(404).send('not found');
+})
 
 function randomString(len) {
     var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';

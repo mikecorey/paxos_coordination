@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Agent Sim</title>
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #map {
+        height: 100%;
+      }
+      #toggleButton {
+      	position: absolute;
+      	top: 20px;
+      	left: 300px;
+      	height: 30px;
+      	width: 150px;
+      }
+      #infoArea {
+        position: absolute;
+        top: 200px;
+        left: 50px;
+      }
+      #agentEnabled {
+        position: absolute;
+        top: 500px;
+        left: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <div id="infoArea"></div>
+    <div id="agentEnabled">
+      <input type="button" id="toggleAgent" onclick="toggleAgent()" value="Enabled?"></input>
+    </div>
+    <script type="text/javascript" src="agent.js"></script>
+    <script type="text/javascript" src="map.js"></script>
+    <script>
+
+    function httpGet(theUrl) {
+        var xmlHttp = new XMLHttpRequest();
+        xmlHttp.open( "GET", theUrl, false );
+        xmlHttp.send( null );
+        return xmlHttp.responseText;
+    }
+
+    var bounds = {x1: 43.132, y1: -76.282, x2: 42.988, y2: -76.047};
+
+    function randomWaypoint (bounds) {
+        var xDelta = Math.abs(bounds.x1 - bounds.x2);
+        var yDelta = Math.abs(bounds.y1 - bounds.y2);
+        var xRandom = Math.min(bounds.x1, bounds.x2) + Math.random() * xDelta;
+        var yRandom = Math.min(bounds.y1, bounds.y2) + Math.random() * yDelta;
+        console.log(xDelta);
+        return {x:xRandom, y:yRandom};
+    }
+    
+    var waypoints = [];
+    for (var i = 0; i < 10; i++) {
+        var waypt = randomWaypoint(bounds);
+        waypoints.push({lat:waypt.x, lng:waypt.y});
+    }
+    
+    var centerLatLong = waypoints[0];
+
+    var agentInit = httpGet('http://localhost:3000/agent/initialize/' + waypoints[0].lat + '/' + waypoints[0].lng);
+    var agentInitJSON = JSON.parse(agentInit);
+    var id = agentInitJSON.id;
+    
+    var agent = new Agent(id, "#00F", waypoints, 200, false);
+
+
+    function toggleAgent() {
+        agent.enabled = !agent.enabled;
+    }
+
+
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDf85AQTumVMvli31zD4DkgPVc3C06YZtw&callback=initMap&signed_in=true&libraries=geometry" async defer>
+    </script>
+  </body>
+</html>
