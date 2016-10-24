@@ -2,6 +2,7 @@
 //How often should we run a tick...  This is stored outside the Agent constructor for speed adjustment
 var internalUpdateFreq = 50;
 var positionUpdateFreq = 300;
+var comsFreq = 500;
 
 function Agent(id, color, flightplan, speed, enabled) {
 	//A unique identifier for an agent
@@ -63,7 +64,14 @@ function Agent(id, color, flightplan, speed, enabled) {
     
     this.interval2 = setInterval(function() {
         if (me.enabled) {
-            httpGetAsync('http://localhost:3000/agent/updateLoc/' + me.id + '/' + me.currentPos.lat + '/' + me.currentPos.lng, function(junk){;});
+            httpGetAsync('http://localhost:3000/agent/updateLoc/' + me.id + '/' + me.currentPos.lat + '/' + me.currentPos.lng, function(){;});
         }
     }, positionUpdateFreq);
+    
+    this.interval3 = setInterval(function() {
+        if (me.enabled) {   //TODO HARDCODED AGENT COUNT!!!!
+            var toAgent = Math.floor(Math.random() * 4);
+            httpGetAsync('http://localhost:3000/agent/communicate/' + me.id + '/' + toAgent + '/hello', function(){;});
+        }
+    }, comsFreq);
 }

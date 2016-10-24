@@ -67,7 +67,7 @@ router.get('/agent/communicate/:fromAgent/:toAgent/:message', function(req, res)
    var toAgentId = parseInt(req.params.toAgent, 10);
    var message = req.params.message;
    var timestamp = new Date();
-   winston.log('info', 'requesting agent');
+   winston.log('debug', 'comms from ' + fromAgentId + ' to ' + toAgentId + '');
    if (canCommunicate(fromAgentId, toAgentId)) {
        agents[toAgentId].mailbox.push(new Message(timestamp, fromAgentId, toAgentId, message));
        res.status(200).send("message sent");
