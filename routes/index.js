@@ -35,6 +35,10 @@ router.get('/agent/status/:agentId', function(req, res) {
    res.status(200).send(JSON.stringify(agents[agentId]));
 });
 
+router.get('/agent/status', function(req, res) {
+   res.send(JSON.stringify(agents)); 
+});
+
 function canCommunicate(toAgent, fromAgent) {
     var agentDistance = Math.sqrt(Math.pow(agents[toAgent].lat - agents[fromAgent].lat, 2) + Math.pow(agents[toAgent].lng - agents[fromAgent].lng, 2)); 
     var result = agentDistance <= maxComDistance; 
@@ -76,11 +80,13 @@ router.get('/agent/communicate/:fromAgent/:toAgent/:message', function(req, res)
    }
 });
 
-router.get('/agent/updateLoc/:agentId/:locX/:locY', function(req,res) {
+router.get('/agent/updateLoc/:agentId/:lat/:lng', function(req,res) {
    var agentId = parseInt(req.params.agentId, 10);
-   var locX = parseFloat(req.params.locX, 10);
-   var locY = parseFloat(req.params.locY, 10);
-   winston.log('trace', 'Agent ' + agentId + ' is at (' + locX + ',' + locY + ')');
+   var lat = parseFloat(req.params.lat, 10);
+   var lng = parseFloat(req.params.lng, 10);
+   agents[agentId].lat = lat;
+   agents[agentId].lng = lng;
+   winston.log('trace', 'Agent ' + agentId + ' is at (' + lng + ',' + lng + ')');
    res.status(200).send('ok');
 });
 
@@ -108,7 +114,6 @@ function randomString(len) {
 }
 
 router.use(function(req, res) {
-    console.log(req.headers.host);
     var date = new Date();
     if (date.getMinutes() / 10 % 2 == 1)  {
         res.redirect('http://' + req.headers.host + '/' + randomString(20));

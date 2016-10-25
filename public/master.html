@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Master View</title>
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #map {
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body onload="run()">
+    <div id="map"></div>
+    <div id="infoArea"></div>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDf85AQTumVMvli31zD4DkgPVc3C06YZtw&callback=initMap&signed_in=true&libraries=geometry" async defer></script>
+    <script type="text/javascript" src="agent.js"></script>
+    <script type="text/javascript" src="mastermaps.js"></script>
+    <script>
+        var positionUpdateFreq = 500;
+
+        function httpGetAsync(theUrl, callback)
+        {
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.onreadystatechange = function() { 
+                if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+                    callback(xmlHttp.responseText);
+            }
+            xmlHttp.open("GET", theUrl, true); 
+            xmlHttp.send(null);
+        }
+        
+        function httpPostAsync(theUrl, callback)
+        {
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.onreadystatechange = function() { 
+                if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+                    callback(xmlHttp.responseText);
+            }
+            xmlHttp.open("POST", theUrl, true); 
+            xmlHttp.send(null);
+        }
+
+                
+        function updateCollects() {
+            httpGetAsync('/collects/update')
+            
+        }
+
+        var doUpdateAgents = false;
+        
+        function run() {
+            console.log('starting');
+            httpGetAsync('/agent/status', function(res) {
+                agents = JSON.parse(res);
+                var agentLocation = 0;
+                for (var i = 0; i < agents.length; i++) {
+                    agentLocation = {lat: agents[i].lat, lng: agents[i].lng};
+                    addAgentMarker(agentLocation);
+                }
+                map.setCenter(agentLocation);
+                doUpdateAgents = true;
+            });
+        }
+        
+        this.interval = setInterval(function() {
+            if (doUpdateAgents) {
+                httpGetAsync('/agent/status', function(res) {
+                    agents = JSON.parse(res);
+                    for (var i = 0; i < agents.length; i++) {
+                        var agentLocation = {lat: agents[i].lat, lng: agents[i].lng};
+                        updateAgentLocation(i, agentLocation);
+                    }
+                });
+            }
+        }, positionUpdateFreq);
+    </script>
+    <input type="button" id="toggleButton" onclick="toggleMode()" value="Place markers"></input>
+
+  </body>
+</html>
