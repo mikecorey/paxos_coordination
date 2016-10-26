@@ -42,43 +42,86 @@
     <script type="text/javascript" src="map.js"></script>
     <script>
 
-    function httpGet(theUrl) {
-        var xmlHttp = new XMLHttpRequest();
-        xmlHttp.open( "GET", theUrl, false );
-        xmlHttp.send( null );
-        return xmlHttp.responseText;
-    }
+        function httpGet(theUrl) {
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.open( "GET", theUrl, false );
+            xmlHttp.send( null );
+            return xmlHttp.responseText;
+        }
 
-    var bounds = {x1: 43.132, y1: -76.282, x2: 42.988, y2: -76.047};
+        function httpGetAsync(theUrl, callback)
+        {
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.onreadystatechange = function() { 
+                if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+                    callback(xmlHttp.responseText);
+            }
+            xmlHttp.open("GET", theUrl, true); 
+            xmlHttp.send(null);
+        }
 
-    function randomWaypoint (bounds) {
-        var xDelta = Math.abs(bounds.x1 - bounds.x2);
-        var yDelta = Math.abs(bounds.y1 - bounds.y2);
-        var xRandom = Math.min(bounds.x1, bounds.x2) + Math.random() * xDelta;
-        var yRandom = Math.min(bounds.y1, bounds.y2) + Math.random() * yDelta;
-        console.log(xDelta);
-        return {x:xRandom, y:yRandom};
-    }
-    
-    var waypoints = [];
-    for (var i = 0; i < 10; i++) {
-        var waypt = randomWaypoint(bounds);
-        waypoints.push({lat:waypt.x, lng:waypt.y});
-    }
-    
-    var centerLatLong = waypoints[0];
+        var bounds = {x1: 43.132, y1: -76.282, x2: 42.988, y2: -76.047};
 
-    var agentInit = httpGet('/agent/initialize/' + waypoints[0].lat + '/' + waypoints[0].lng);
-    var agentInitJSON = JSON.parse(agentInit);
-    var id = agentInitJSON.id;
-    
-    var agent = new Agent(id, "#00F", waypoints, 200, false);
+        function randomWaypoint (bounds) {
+            var xDelta = Math.abs(bounds.x1 - bounds.x2);
+            var yDelta = Math.abs(bounds.y1 - bounds.y2);
+            var xRandom = Math.min(bounds.x1, bounds.x2) + Math.random() * xDelta;
+            var yRandom = Math.min(bounds.y1, bounds.y2) + Math.random() * yDelta;
+            console.log(xDelta);
+            return {x:xRandom, y:yRandom};
+        }
+        
+        var waypoints = [];
+        for (var i = 0; i < 10; i++) {
+            var waypt = randomWaypoint(bounds);
+            waypoints.push({lat:waypt.x, lng:waypt.y});
+        }
+        
+        var centerLatLong = waypoints[0];
 
+        var agentInit = httpGet('/agent/initialize/' + waypoints[0].lat + '/' + waypoints[0].lng);
+        var agentInitJSON = JSON.parse(agentInit);
+        var id = agentInitJSON.id;
+        
+        var agent = new Agent(id, "#00F", waypoints, 200, false);
 
-    function toggleAgent() {
-        agent.enabled = !agent.enabled;
-    }
+        function toggleAgent() {
+            agent.enabled = !agent.enabled;
+        }
 
+        var positionUpdateFreq = 300;
+        var comsFreq = 500;
+        var statusUpdateFreq = 500;
+
+        var otherAgents = [];
+
+        this.interval2 = setInterval(function() {
+            if (agent.enabled) {
+                httpGetAsync('/agent/updateLoc/' + agent.id + '/' + agent.currentPos.lat + '/' + agent.currentPos.lng, function(){;});
+            }
+        }, positionUpdateFreq);
+        
+        this.interval3 = setInterval(function() {
+            if (agent.enabled) {
+                httpGetAsync('/agent/status/', function(res){
+                    otherAgents = JSON.parse(res);
+                    var myIdx = otherAgents.findIndex((x) => x.id == agent.id);
+                    otherAgents.splice(myIdx, 1);
+                });
+            }
+        }, statusUpdateFreq)
+                
+        this.interval4 = setInterval(function() {
+            if (agent.enabled) {   //TODO HARDCODED AGENT COUNT!!!!
+                var toAgent = otherAgents[Math.floor(Math.random() * otherAgents.length)].id;
+                httpGetAsync('/agent/communicate/' + agent.id + '/' + toAgent + '/hello', function(){;});
+            }
+        }, comsFreq);
+
+        
+        window.addEventListener("beforeunload", function(e){
+            httpGet('/agent/remove/' + agent.id);
+        }, false);
 
     </script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDf85AQTumVMvli31zD4DkgPVc3C06YZtw&callback=initMap&signed_in=true&libraries=geometry" async defer>

@@ -1,8 +1,5 @@
-
 //How often should we run a tick...  This is stored outside the Agent constructor for speed adjustment
 var internalUpdateFreq = 50;
-var positionUpdateFreq = 300;
-var comsFreq = 500;
 
 function Agent(id, color, flightplan, speed, enabled) {
 	//A unique identifier for an agent
@@ -43,35 +40,10 @@ function Agent(id, color, flightplan, speed, enabled) {
 		me.currentPos = {lat: posAfterTimestep.lat(), lng: posAfterTimestep.lng()};
         updateAgentLocation();
 	}
-
-
-	this.interval = setInterval(function () {
-		if (me.enabled) {
-			run();
-		}
-	}, internalUpdateFreq);
-
-    function httpGetAsync(theUrl, callback)
-    {
-        var xmlHttp = new XMLHttpRequest();
-        xmlHttp.onreadystatechange = function() { 
-            if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
-                callback(xmlHttp.responseText);
-        }
-        xmlHttp.open("GET", theUrl, true); 
-        xmlHttp.send(null);
-    }
     
-    this.interval2 = setInterval(function() {
+    this.interval = setInterval(function () {
         if (me.enabled) {
-            httpGetAsync('/agent/updateLoc/' + me.id + '/' + me.currentPos.lat + '/' + me.currentPos.lng, function(){;});
+            run();
         }
-    }, positionUpdateFreq);
-    
-    this.interval3 = setInterval(function() {
-        if (me.enabled) {   //TODO HARDCODED AGENT COUNT!!!!
-            var toAgent = Math.floor(Math.random() * 4);
-            httpGetAsync('/agent/communicate/' + me.id + '/' + toAgent + '/hello', function(){;});
-        }
-    }, comsFreq);
+    }, internalUpdateFreq);
 }
