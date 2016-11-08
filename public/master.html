@@ -13,11 +13,21 @@
       #map {
         height: 100%;
       }
+      #chat {
+        position: absolute;
+      	top: 200px;
+      	left: 30px;
+      	overflow: scroll;
+      	width: 200px;
+        height: 600px;
+        background-color: #FFFFFF;
+      }
     </style>
   </head>
   <body onload="run()">
     <div id="map"></div>
     <div id="infoArea"></div>
+    <div id="chat">CHAT:</div>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDf85AQTumVMvli31zD4DkgPVc3C06YZtw&callback=initMap&signed_in=true&libraries=geometry" async defer></script>
     <script type="text/javascript" src="agent.js"></script>
     <script type="text/javascript" src="mastermaps.js"></script>
@@ -68,19 +78,39 @@
             });
         }
         
+        function updateChatLog(messages) {
+            chat = ""
+            messages = messages.sort(function (x,y) {
+                var d1 = new Date(x.timestamp);
+                var d2 = new Date(y.timestamp);
+                
+                return d1 < d2 ? 1 : -1;
+              });
+            for (var i = 0; i < messages.length; i++) {
+                var timestamp = new Date(messages[i].timestamp);
+                chat += "" + timestamp.toLocaleTimeString() + "=" + messages[i].fromAgent + "->" + messages[i].toAgent + ": " + messages[i].message + "<br/>";                
+            }
+            document.getElementById("chat").innerHTML = chat;
+        }
+        
         this.interval = setInterval(function() {
             if (doUpdateAgents) {
                 httpGetAsync('/agent/status', function(res) {
+                    messages = [];
                     agents = JSON.parse(res);
                     for (var i = 0; i < agents.length; i++) {
                         var agentLocation = {lat: agents[i].lat, lng: agents[i].lng};
+                        for (var j = 0; j < agents[i].mailbox.length; j++) {
+                            var message = agents[i].mailbox[j];
+                            messages = messages.concat(agents[i].mailbox[j]);
+                        }
                         updateAgentLocation(i, agentLocation);
+                        updateChatLog(messages);
                     }
                 });
             }
         }, positionUpdateFreq);
     </script>
     <input type="button" id="toggleButton" onclick="toggleMode()" value="Place markers"></input>
-
   </body>
 </html>
