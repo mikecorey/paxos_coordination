@@ -8,11 +8,6 @@ var collects = [];
 
 var siteNo = 0;
 
-function updateCollects() {
-    console.log(collects);
-}
-
-
 function addCollectMarker (pos) {
   var marker = new google.maps.Marker({
     position: pos,
@@ -20,16 +15,16 @@ function addCollectMarker (pos) {
     map: map
   });
   marker.addListener('click', function (event) {
-    var toDelete = collects.findIndex((x) => x.lat == marker.position.lat() && x.lng == marker.position.lng());
-    collects.splice(toDelete, 1);
+    //var toDelete = collects.findIndex((x) => x.lat == marker.position.lat() && x.lng == marker.position.lng());
+    //collects.splice(toDelete, 1);
     marker.setMap(null);
     //emit remove point
-    updateCollects();
+    removeCollect({lat:pos.lat(), lng: pos.lng()});
   });
   collectMarkers.push(marker);
-  collects.push({id: marker.label, lat: pos.lat(), lng: pos.lng()});
+  //collects.push({id: marker.label, lat: pos.lat(), lng: pos.lng()});
   //emit add point
-  updateCollects();
+  addCollect({lat:pos.lat(), lng:pos.lng()});
 }
 
 function addAgentMarker (pos) {

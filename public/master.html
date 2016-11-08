@@ -57,9 +57,12 @@
         }
 
                 
-        function updateCollects() {
-            httpGetAsync('/collects/update')
-            
+        function addCollect(point) {
+            httpGetAsync('/collects/add/' + point.lat + '/' + point.lng, function() {;});
+        }
+        
+        function removeCollect(point) {
+            httpGetAsync('/collects/remove/' + point.lat + '/' + point.lng, function() {;});
         }
 
         var doUpdateAgents = false;

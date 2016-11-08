@@ -92,9 +92,11 @@
         var positionUpdateFreq = 300;
         var comsFreq = 5000;
         var statusUpdateFreq = 500;
+        var scanFreq = 1000;
 
         var otherAgents = [];
-
+        var collects = [];
+        
         this.interval2 = setInterval(function() {
             if (agent.enabled) {
                 httpGetAsync('/agent/updateLoc/' + agent.id + '/' + agent.currentPos.lat + '/' + agent.currentPos.lng, function(){;});
@@ -118,6 +120,14 @@
             }
         }, comsFreq);
 
+        this.interval5 = setInterval(function() {
+            if (agent.enabled) {
+                httpGetAsync('/collects/show/', function(res){
+                    collects = JSON.parse(res);
+                    updateCollects();
+                });
+            }
+        }, scanFreq);
         
         window.addEventListener("beforeunload", function(e){
             httpGet('/agent/remove/' + agent.id);

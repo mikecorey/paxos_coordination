@@ -23,6 +23,13 @@ function Message (timestamp, fromAgent, toAgent, message) {
     this.message = message;
 }
 
+function Collect (lat, lng) {
+    this.lat = lat;
+    this.lng = lng;
+}
+
+var collects = [];
+
 var agents = [];
 
 //mapping from agent id to agents[idx]
@@ -40,7 +47,7 @@ function getAgentIdx(id) {
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  res.render('index', { title: 'ExprAess' });
+  res.render('index', { title: 'ExprBAess' });
 });
 
 router.get('/agent/status/:agentId', function(req, res) {
@@ -74,8 +81,6 @@ router.get('/agent/remove/:agentId', function(req, res) {
     winston.log('info', 'removed ' + removed);
 });
 
-
-
 function canCommunicate(toAgentIdx, fromAgentIdx) {
     var agentDistance = Math.sqrt(Math.pow(agents[toAgentIdx].lat - agents[fromAgentIdx].lat, 2) + Math.pow(agents[toAgentIdx].lng - agents[fromAgentIdx].lng, 2)); 
     var result = agentDistance <= maxComDistance; 
@@ -92,11 +97,12 @@ router.get('/agent/communicate/:fromAgent/:toAgent/:message', function(req, res)
    winston.log('debug', 'comms from ' + fromAgentId + ' to ' + toAgentId + '');
    if (canCommunicate(fromAgentIdx, toAgentIdx)) {
        agents[toAgentIdx].mailbox.push(new Message(timestamp, fromAgentId, toAgentId, message));
-       res.status(200).send("message sent");
+       res.status(200).send("ok");
    } else {
-       res.status(404).send("can't send");
+       res.status(200).send("unreachable");
    }
 });
+
 
 router.get('/agent/updateLoc/:agentId/:lat/:lng', function(req,res) {
    var agentId = parseInt(req.params.agentId, 10);
@@ -105,7 +111,7 @@ router.get('/agent/updateLoc/:agentId/:lat/:lng', function(req,res) {
    var agentIdx = getAgentIdx(agentId);
    agents[agentIdx].lat = lat;
    agents[agentIdx].lng = lng;
-   winston.log('trace', 'Agent ' + agentId + ' is at (' + lng + ',' + lng + ')');
+   winston.log('trace', 'Agent ' + agentId + ' is at (' + lat + ',' + lng + ')');
    res.status(200).send('ok');
 });
 
@@ -120,7 +126,32 @@ router.get('/agent/getMessages/:agentId/:flush?', function(req,res) {
     }
 });
 
+router.get('/collects/add/:lat/:lng', function(req,res) {
+   var lat = parseFloat(req.params.lat, 10);
+   var lng = parseFloat(req.params.lng, 10);
+   var col = new Collect(lat, lng);
+   collects.push(col);
+   winston.log('info', 'Collection added at (' + lat + ',' + lng + ')');
+   res.status(200).send('ok');
+});
 
+router.get('/collects/remove/:lat/:lng', function(req,res) {
+   var lat = parseFloat(req.params.lat, 10);
+   var lng = parseFloat(req.params.lng, 10);
+   for (var i = 0; i < collects.length; i++) {
+       if (collects[i].lat == lat && collects[i].lng == lng) {
+           collects.splice(i, 1);
+       }
+   }
+   winston.log('info', 'Collection removed at (' + lat + ',' + lng + ')');
+   res.status(200).send('ok');
+});
+
+router.get('/collects/show/:lat?/:lng?', function(req, res) {
+   var lat = parseFloat(req.params.lat, 10);
+   var lng = parseFloat(req.params.lng, 10);
+   res.send(JSON.stringify(collects)); 
+});
 
 /*tollolololol*/
 if (trololol) {
