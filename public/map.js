@@ -36,19 +36,25 @@ function updateAgentLocation() {
   agentMarker.setPosition(agent.currentPos);
 }
 
-/*NOT SHOWING UP!!!*/
+var prevCollects = 0; 
+
 function updateCollects() {
-  console.log('updating');
-  collectMarkers = [];
+
+  if (prevCollects != collects.length) {
+      while (collectMarkers.length > 0) {
+          var tmp = collectMarkers.pop();
+          tmp.setMap(null);
+      }
+      debugger;
+  }
+  prevCollects = collects.length;
   for (var i = 0; i < collects.length; i++) {
     var marker = new google.maps.Marker({
       position: new google.maps.LatLng({lat: collects[i].lat, lng: collects[i].lng}),
       label: "C",
       map: map
     });
-    console.log(marker.getPosition().toString());
     collectMarkers.push(marker);
-    console.log('asd');
   }
 }
 
