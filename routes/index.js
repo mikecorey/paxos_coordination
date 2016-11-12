@@ -50,6 +50,12 @@ router.get('/', function(req, res, next) {
   res.render('index', { title: 'ExprBAess' });
 });
 
+router.get('/resetSim', function(req, res) {
+    collects = [];
+    agents = [];
+    winston.log('info', 'SIMULATION RESET!!!');
+});
+
 router.get('/agent/status/:agentId', function(req, res) {
     var agentId = parseInt(req.params.agentId, 10);
     winston.log('info', 'requesting agent ' + agentId);
