@@ -47,13 +47,14 @@ function getAgentIdx(id) {
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  res.render('index', { title: 'ExprBAess' });
+  res.render('index', { title: 'ExprCBAess' });
 });
 
 router.get('/resetSim', function(req, res) {
     collects = [];
     agents = [];
     winston.log('info', 'SIMULATION RESET!!!');
+    res.send("reset!!!");
 });
 
 router.get('/agent/status/:agentId', function(req, res) {
