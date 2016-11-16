@@ -114,23 +114,27 @@
         }, statusUpdateFreq)
                 
         this.interval4 = setInterval(function() {
-            if (agent.enabled) {   //TODO HARDCODED AGENT COUNT!!!!
-                var toAgent = otherAgents[Math.floor(Math.random() * otherAgents.length)].id;
-                httpGetAsync('/agent/communicate/' + agent.id + '/' + toAgent + '/hello', function(){;});
+            if (agent.enabled) {
+                if (otherAgents.length > 0) {
+                  var toAgent = otherAgents[Math.floor(Math.random() * otherAgents.length)].id;
+                  httpGetAsync('/agent/communicate/' + agent.id + '/' + toAgent + '/hello', function(){;});
+                }
             }
         }, comsFreq);
 
         this.interval5 = setInterval(function() {
-            if (agent.enabled) {
-                httpGetAsync('/collects/show/', function(res){
-                    collects = JSON.parse(res);
-                    updateCollects();
-                });
-            }
+          if (agent.enabled) {
+            httpGetAsync('/collects/show/', function(res){
+              collects = JSON.parse(res);
+              updateCollects();
+            });
+          }
         }, scanFreq);
-        
+
         window.addEventListener("beforeunload", function(e){
-            httpGet('/agent/remove/' + agent.id);
+          httpGetAsync('/agent/remove/' + agent.id, function(res) {
+            console.log('bye');
+          });
         }, false);
 
     </script>
