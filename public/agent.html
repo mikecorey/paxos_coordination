@@ -79,7 +79,7 @@
         
         var centerLatLong = waypoints[0];
 
-        var agentInit = httpGet('/agent/initialize/' + waypoints[0].lat + '/' + waypoints[0].lng);
+        var agentInit = httpGet('/agents/initialize/' + waypoints[0].lat + '/' + waypoints[0].lng);
         var agentInitJSON = JSON.parse(agentInit);
         var id = agentInitJSON.id;
         
@@ -99,13 +99,13 @@
         
         this.interval2 = setInterval(function() {
             if (agent.enabled) {
-                httpGetAsync('/agent/updateLoc/' + agent.id + '/' + agent.currentPos.lat + '/' + agent.currentPos.lng, function(){;});
+                httpGetAsync('/agents/updateLoc/' + agent.id + '/' + agent.currentPos.lat + '/' + agent.currentPos.lng, function(){;});
             }
         }, positionUpdateFreq);
         
         this.interval3 = setInterval(function() {
             if (agent.enabled) {
-                httpGetAsync('/agent/status/', function(res){
+                httpGetAsync('/agents/status/', function(res){
                     otherAgents = JSON.parse(res);
                     var myIdx = otherAgents.findIndex((x) => x.id == agent.id);
                     otherAgents.splice(myIdx, 1);
@@ -117,7 +117,7 @@
             if (agent.enabled) {
                 if (otherAgents.length > 0) {
                   var toAgent = otherAgents[Math.floor(Math.random() * otherAgents.length)].id;
-                  httpGetAsync('/agent/communicate/' + agent.id + '/' + toAgent + '/hello', function(){;});
+                  httpGetAsync('/agents/communicate/' + agent.id + '/' + toAgent + '/hello', function(){;});
                 }
             }
         }, comsFreq);
@@ -132,7 +132,7 @@
         }, scanFreq);
 
         window.addEventListener("beforeunload", function(e){
-          httpGetAsync('/agent/remove/' + agent.id, function(res) {
+          httpGetAsync('/agents/remove/' + agent.id, function(res) {
             console.log('bye');
           });
         }, false);

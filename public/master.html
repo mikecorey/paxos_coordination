@@ -69,7 +69,7 @@
         
         function run() {
             console.log('starting');
-            httpGetAsync('/agent/status', function(res) {
+            httpGetAsync('/agents/status', function(res) {
                 agents = JSON.parse(res);
                 var agentLocation = 0;
                 for (var i = 0; i < agents.length; i++) {
@@ -98,7 +98,7 @@
         
         this.interval = setInterval(function() {
             if (doUpdateAgents) {
-                httpGetAsync('/agent/status', function(res) {
+                httpGetAsync('/agents/status', function(res) {
                     messages = [];
                     agents = JSON.parse(res);
                     for (var i = 0; i < agents.length; i++) {

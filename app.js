@@ -6,10 +6,13 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
 var routes = require('./routes/index');
+//var users = require('./routes/users');
+var agents = require('./routes/agents');
+var collects = require('./routes/collects');
 
 var app = express();
 var server = require('http').Server(app);
-var io = require('socket.io')(http);
+var io = require('socket.io')(server);
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -24,7 +27,9 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', routes);
-
+//app.use('/users', users);
+app.use('/agents', agents);
+app.use('/collects', collects);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -57,5 +62,9 @@ app.use(function(err, req, res, next) {
   });
 });
 
+app.use(function(req, res, next) {
+  res.io = io;
+  next();  
+});
 
 module.exports = {app: app, server: server};

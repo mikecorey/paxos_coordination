@@ -45,7 +45,6 @@ function updateCollects() {
           var tmp = collectMarkers.pop();
           tmp.setMap(null);
       }
-      debugger;
   }
   prevCollects = collects.length;
   for (var i = 0; i < collects.length; i++) {
