@@ -1,5 +1,4 @@
 function Agent (id, lat, lng) {
-    console.log('made an agent');
     this.id = id;
     this.lat = lat;
     this.lng = lng;
