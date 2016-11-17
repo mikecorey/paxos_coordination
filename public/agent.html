@@ -38,27 +38,12 @@
     <div id="agentEnabled">
       <input type="button" id="toggleAgent" onclick="toggleAgent()" value="Enabled?"></input>
     </div>
+    <script type="text/javascript" src="httpCalls.js"></script>
     <script type="text/javascript" src="agent.js"></script>
     <script type="text/javascript" src="map.js"></script>
     <script>
 
-        function httpGet(theUrl) {
-            var xmlHttp = new XMLHttpRequest();
-            xmlHttp.open( "GET", theUrl, false );
-            xmlHttp.send( null );
-            return xmlHttp.responseText;
-        }
-
-        function httpGetAsync(theUrl, callback)
-        {
-            var xmlHttp = new XMLHttpRequest();
-            xmlHttp.onreadystatechange = function() { 
-                if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
-                    callback(xmlHttp.responseText);
-            }
-            xmlHttp.open("GET", theUrl, true); 
-            xmlHttp.send(null);
-        }
+        /*****Code to initalize agent START *****/
 
         var bounds = {x1: 43.132, y1: -76.282, x2: 42.988, y2: -76.047};
 
@@ -84,6 +69,8 @@
         var id = agentInitJSON.id;
         
         var agent = new Agent(id, "#00F", waypoints, 200, false);
+
+        /*****Code to intiialize agent END*****/
 
         function toggleAgent() {
             agent.enabled = !agent.enabled;

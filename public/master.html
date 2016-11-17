@@ -29,34 +29,12 @@
     <div id="infoArea"></div>
     <div id="chat">CHAT:</div>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDf85AQTumVMvli31zD4DkgPVc3C06YZtw&callback=initMap&signed_in=true&libraries=geometry" async defer></script>
+    <script type="text/javascript" src="httpCalls.js"></script>
     <script type="text/javascript" src="agent.js"></script>
     <script type="text/javascript" src="mastermaps.js"></script>
     <script>
         var positionUpdateFreq = 500;
 
-        function httpGetAsync(theUrl, callback)
-        {
-            var xmlHttp = new XMLHttpRequest();
-            xmlHttp.onreadystatechange = function() { 
-                if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
-                    callback(xmlHttp.responseText);
-            }
-            xmlHttp.open("GET", theUrl, true); 
-            xmlHttp.send(null);
-        }
-        
-        function httpPostAsync(theUrl, callback)
-        {
-            var xmlHttp = new XMLHttpRequest();
-            xmlHttp.onreadystatechange = function() { 
-                if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
-                    callback(xmlHttp.responseText);
-            }
-            xmlHttp.open("POST", theUrl, true); 
-            xmlHttp.send(null);
-        }
-
-                
         function addCollect(point) {
             httpGetAsync('/collects/add/' + point.lat + '/' + point.lng, function() {;});
         }
