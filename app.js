@@ -6,7 +6,7 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
 var routes = require('./routes/index');
-//var users = require('./routes/users');
+var users = require('./routes/users');
 var agents = require('./routes/agents');
 var collects = require('./routes/collects');
 
@@ -18,6 +18,13 @@ var io = require('socket.io')(server);
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
+//socket.io additions
+
+app.use(function(req, res, next) {
+  res.io = io;
+  next();  
+});
+
 // uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(logger('dev'));
@@ -27,7 +34,7 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', routes);
-//app.use('/users', users);
+app.use('/users', users);
 app.use('/agents', agents);
 app.use('/collects', collects);
 
@@ -60,11 +67,6 @@ app.use(function(err, req, res, next) {
     message: err.message,
     error: {}
   });
-});
-
-app.use(function(req, res, next) {
-  res.io = io;
-  next();  
 });
 
 module.exports = {app: app, server: server};
