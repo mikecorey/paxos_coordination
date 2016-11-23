@@ -5,7 +5,7 @@ var router = express.Router();
 
 var model = require('../model/model'); 
 
-var maxComDistance = .048;
+var maxComDistance = .088;
 
 var agents = [];
 
@@ -82,6 +82,27 @@ router.get('/communicate/:fromAgent/:toAgent/:message', function(req, res) {
             res.status(200).send("unreachable");
         }
     }
+});
+
+router.get('/broadcast/:fromAgent/:message', function(req, res) {
+    var fromAgentId = parseInt(req.params.fromAgent, 10);
+    var message = req.params.message;
+    var fromAgentIdx = getAgentIdx(fromAgentId);
+    var timestamp = new Date();
+    var recipients = [];
+    for (var i = 0; i < agents.length; i++) {
+        if (i != fromAgentIdx) {
+            if (canCommunicate(fromAgentIdx, i)) {
+                var toAgentIdx = agents[i].id;
+                recipients.push(agents[i].id);
+                agents[i].mailbox.push(new model.Message(timestamp, fromAgentId, toAgentIdx, message));
+            }
+        }
+    }
+    var responseString = JSON.stringify(recipients);
+    if (recipients.length > 0)
+        winston.log('info', 'bcast from ' + fromAgentId + ' to ' + responseString + ': ' + message);
+    res.send(responseString);
 });
 
 router.get('/updateLoc/:agentId/:lat/:lng', function(req,res) {

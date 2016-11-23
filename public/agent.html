@@ -30,18 +30,35 @@
         top: 500px;
         left: 20px;
       }
+      #paxos {
+        position: absolute;
+        top: 30px;
+        left: 50%;
+      }
     </style>
   </head>
   <body>
     <div id="map"></div>
     <div id="infoArea"></div>
+    <div id="paxos">
+      <input type="text" name="paxosVal"><input type="button" id="sendValue"/><br />
+      <p id="paxosDebug">
+        not started
+      </p>
+    </div>
     <div id="agentEnabled">
       <input type="button" id="toggleAgent" onclick="toggleAgent()" value="Enabled?"></input>
     </div>
     <script type="text/javascript" src="httpCalls.js"></script>
     <script type="text/javascript" src="agent.js"></script>
     <script type="text/javascript" src="map.js"></script>
+    <script type="text/javascript" src="/socket.io/socket.io.js"></script>
     <script>
+
+        var paxosRound = 0;
+        var proposedValue = "";
+
+
 
         /*****Code to initalize agent START *****/
 
@@ -84,6 +101,21 @@
         var otherAgents = [];
         var collects = [];
         
+
+        var socket = io.connect('http://localhost:3000');
+        socket.on('addCollect', function (data) {
+          console.log('add    ' + data);
+        });
+
+        socket.on('removeCollect', function (data) {
+          console.log('remove ' + data);
+        });
+
+        socket.on('addAgent', function (data) {
+          console.log('addAgent' + data);
+        });
+
+
         this.interval2 = setInterval(function() {
             if (agent.enabled) {
                 httpGetAsync('/agents/updateLoc/' + agent.id + '/' + agent.currentPos.lat + '/' + agent.currentPos.lng, function(){;});
@@ -102,10 +134,15 @@
                 
         this.interval4 = setInterval(function() {
             if (agent.enabled) {
+                httpGetAsync('/agents/broadcast/' + agent.id + '/hi from ' + agent.id, function(res) {
+                  console.log('sent message to ' + res);
+                });
+                /*
                 if (otherAgents.length > 0) {
                   var toAgent = otherAgents[Math.floor(Math.random() * otherAgents.length)].id;
                   httpGetAsync('/agents/communicate/' + agent.id + '/' + toAgent + '/hello', function(){;});
                 }
+                */
             }
         }, comsFreq);
 
