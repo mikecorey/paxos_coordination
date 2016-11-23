@@ -52,13 +52,14 @@
     <script type="text/javascript" src="httpCalls.js"></script>
     <script type="text/javascript" src="agent.js"></script>
     <script type="text/javascript" src="map.js"></script>
-    <script type="text/javascript" src="/socket.io/socket.io.js"></script>
     <script>
 
         var paxosRound = 0;
         var proposedValue = "";
 
-
+        function handleMessage(message) {
+          console.log(message);
+        }
 
         /*****Code to initalize agent START *****/
 
@@ -69,7 +70,6 @@
             var yDelta = Math.abs(bounds.y1 - bounds.y2);
             var xRandom = Math.min(bounds.x1, bounds.x2) + Math.random() * xDelta;
             var yRandom = Math.min(bounds.y1, bounds.y2) + Math.random() * yDelta;
-            console.log(xDelta);
             return {x:xRandom, y:yRandom};
         }
         
@@ -97,24 +97,11 @@
         var comsFreq = 5000;
         var statusUpdateFreq = 500;
         var scanFreq = 1000;
+        var checkMailFreq = 400;
 
         var otherAgents = [];
         var collects = [];
-        
-
-        var socket = io.connect('http://localhost:3000');
-        socket.on('addCollect', function (data) {
-          console.log('add    ' + data);
-        });
-
-        socket.on('removeCollect', function (data) {
-          console.log('remove ' + data);
-        });
-
-        socket.on('addAgent', function (data) {
-          console.log('addAgent' + data);
-        });
-
+        var messages = [];
 
         this.interval2 = setInterval(function() {
             if (agent.enabled) {
@@ -154,6 +141,15 @@
             });
           }
         }, scanFreq);
+
+        this.interval6 = setInterval(function() {
+          if(agent.enabled) {
+            httpGetAsync('/agents/getMessages/' + agent.id + '/flush', function(res) {
+              messages = JSON.parse(res);
+              messages.forEach(handleMessage);
+            })
+          }
+        }, checkMailFreq);
 
         window.addEventListener("beforeunload", function(e){
           httpGetAsync('/agents/remove/' + agent.id, function(res) {

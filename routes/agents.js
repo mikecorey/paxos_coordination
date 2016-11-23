@@ -123,7 +123,7 @@ router.get('/getMessages/:agentId/:flush?', function(req,res) {
     res.send(JSON.stringify(agents[agentIdx].mailbox));
     if (req.params.flush) {
         winston.log('info', 'and flushing');
-        agents[agentIdx].messages = [];
+        agents[agentIdx].mailbox.length = 0;
     }
 });
 
