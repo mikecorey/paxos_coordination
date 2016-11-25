@@ -117,12 +117,13 @@ router.get('/updateLoc/:agentId/:lat/:lng', function(req,res) {
 router.get('/getMessages/:agentId/:flush?', function(req,res) {
     var agentId = req.params.agentId;
     var agentIdx = getAgentIdx(agentId);
-    winston.log('info', 'getting messages for ' + agentId);
+    var s = "getting messages for " + agentId;
     res.send(JSON.stringify(agents[agentIdx].mailbox));
     if (req.params.flush) {
-        winston.log('info', 'and flushing');
+        s += " and flushing";
         agents[agentIdx].mailbox.length = 0;
     }
+    winston.log('debug', s);
 });
 
 module.exports = router;
