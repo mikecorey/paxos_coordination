@@ -34,8 +34,6 @@ router.get('/status/:agentId?', function(req, res) {
     } else {
         res.send(JSON.stringify(agents));         
     }
-    
-
 });
 
 router.get('/initialize/:lat/:lng', function(req, res) {

@@ -15,15 +15,10 @@ function addCollectMarker (pos) {
     map: map
   });
   marker.addListener('click', function (event) {
-    //var toDelete = collects.findIndex((x) => x.lat == marker.position.lat() && x.lng == marker.position.lng());
-    //collects.splice(toDelete, 1);
     marker.setMap(null);
-    //emit remove point
     removeCollect({lat:pos.lat(), lng: pos.lng()});
   });
   collectMarkers.push(marker);
-  //collects.push({id: marker.label, lat: pos.lat(), lng: pos.lng()});
-  //emit add point
   addCollect({lat:pos.lat(), lng:pos.lng()});
 }
 
