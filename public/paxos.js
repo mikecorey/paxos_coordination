@@ -1,4 +1,4 @@
-var maxRound = -1;
+var maxRound = 0;
 var proposedValue = "";
 var numAgents = -1;
 var prevAcceptedRound = -1;
@@ -6,7 +6,6 @@ var prevAcceptedValue = "null";
 
 function handleMessage(message) {
 	messageBody = message.message;
-	console.log(messageBody);
 	var part = messageBody.split(' ');
 	if (part[0] == 'prepare') {
 		if (part.length > 1) {
@@ -28,21 +27,27 @@ function handleMessage(message) {
 	} else if (part[0] == 'accepted') {
 		console.log('got accepted result!');
 	} else if (part[0] == 'nack_promise') {
-		console.log('NACK!!! failed to promise!');
+		handleNackPromise();
 	} else {  //broken message!
 		console.log('incorrect message format! ' + messageBody);
 	}
 }
 
+var haveConsensus = false;
 var promiseMessages = [];
+var numParticipating = -1;
 
 //Local agent uses this to initiate a paxos round
 function requestPaxos(proposedValue) {
 	promiseMessages = [];
+	haveConsensus = false;
 	numAgents = otherAgents.length + 1;
-	var roundNo = maxRound * 100 + agent.id;  //Incorporating agent id as lower order digits 
-	httpGetAsync('/agents/broadcast/' + agent.id + '/prepare ' + roundNo, function(res) {
+	var roundNumber = maxRound * 100 + agent.id;  //Incorporating agent id as lower order digits 
+	prevAcceptedRound = maxRound;
+	prevAcceptedValue = proposedValue;
+	httpGetAsync('/agents/broadcast/' + agent.id + '/prepare ' + roundNumber, function(res) {
 		console.log('broadcast prepare to ' + res);
+		numParticipating = JSON.parse(res).length;
 	});
 	maxRound++;
 }
@@ -51,7 +56,7 @@ function handlePrepare(sender, roundNumber) {
 	console.log("got prepare request from " + sender);
 	var response = '';
 	if (roundNumber > maxRound) {
-		maxRound = roundNumber / 100;
+		prevAcceptedRound = Math.floor(roundNumber / 100);
 		response = 'promise ' + prevAcceptedRound + ' ' + prevAcceptedValue;
 	} else {
 		response = 'nack_promise';  //SHOULD WE NACK??? //TODO
@@ -61,24 +66,42 @@ function handlePrepare(sender, roundNumber) {
 	});
 }
 
-function handlePromise(sender, lastRoundNumber, lastRoundValue) { 
-	console.log("got promise result from " + sender);
-	if (lastRoundNumber / 100 < maxRound) {
-		promiseMessages.push({sender: sender, n: lastRoundNumber, v:lastRoundValue});
-		if (promiseMessages.length >= Math.floor(numAgents / 2) + 1) {
-			console.log('have consensus');
-			var vMax = -1;
-			var roundNumber = -1;
-			//httpGetAsync('/agents/broadcast/' + agent.id + '/accept ' + )
-		}
-		console.log('commited is ' + promiseMessages.length);
-	} else {
-		console.log('paxos failed.  newer round exists');
+function handleNackPromise(sender) {
+	numParticipating--;
+	console.log('NACK!!! failed to promise!');
+	if (haveConsensus && numParticipating == 0) {
+		requestAccept();
 	}
 }
 
-function handleAccept() {
-	console.log('got accept request!')
+function handlePromise(sender, roundNumber, roundValue) { 
+	console.log("got promise result from " + sender);
+	numParticipating--;
+	promiseMessages.push({sender: sender, n: roundNumber, v: roundValue});
+	console.log('commited is ' + promiseMessages.length);
+	if (promiseMessages.length >= Math.floor(numAgents / 2) + 1) {
+		console.log('have consensus');
+		haveConsensus = true;
+	}
+	if (haveConsensus && numParticipating == 0) {
+			requestAccept();
+	}
+}
+
+//run once we have all responses.
+function requestAccept() {
+	var roundNumber = maxRound * 100 + agent.id;
+	var vMax = -1;
+	for (var i = 0; i < promiseMessages.length; i++) {
+		if (promiseMessages.v > vMax) vMax = promiseMessages.v;
+	}
+	httpGetAsync('/agents/broadcast/' + agent.id + '/accept ' + roundNumber + ' ' + vMax, function (res) {
+		console.log('broadcast accept message to ' + res);
+	});
+}
+
+function handleAccept(sender, roundNumber, roundValue) {
+	console.log('got accept request from ' + sender + ' #=' + roundNumber + ' v=' + roundValue);
 }
 
 function handleAccepted() {;}
