@@ -36,8 +36,20 @@ router.get('/status/:agentId?', function(req, res) {
 	}
 });
 
+function getNewId () {
+	for (var i = 0; i < agents.length + 1; i++) {
+		var isValid = true;
+		for (var j = 0; j < agents.length; j++) {
+			if (agents[j].id == i) {
+				isValid = false;
+			}
+		}
+		if (isValid) return i;
+	}
+}
+
 router.get('/initialize/:lat/:lng', function(req, res) {
-	var id = agents.length;
+	var id = getNewId();
 	var lat = parseFloat(req.params.lat);
 	var lng = parseFloat(req.params.lng);
 	var agent = new model.Agent(id, lat, lng);
