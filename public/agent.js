@@ -28,13 +28,13 @@ function Agent(id, color, flightplan, speed, enabled) {
 		var lastGoogleMapsLatLng = new google.maps.LatLng(me.currentPos);
 		var nextGoogleMapsLatLng = new google.maps.LatLng(me.nextWaypoint);
     if (isAtWaypoint(lastGoogleMapsLatLng, nextGoogleMapsLatLng)) {
-      me.flightplan.shift();
+      var requestRemove = me.flightplan.shift();
+			collectedWaypoint(requestRemove);
       updateWaypoints();
       if (me.flightplan.length > 1) {
         me.nextWaypoint = me.flightplan[1];
 			  nextGoogleMapsLatLng = new google.maps.LatLng(me.nextWaypoint);
       } else {
-        me.enabled = false; 
         nextGoogleMapsLatLng = new google.maps.LatLng(me.currentPos);
       }          
     }

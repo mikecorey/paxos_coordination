@@ -190,7 +190,7 @@
             }
         }, comsFreq);
 
-
+/* confirm this isn't used then delete'
         function comparePosition(a, b) {
           if (a.lat < b.lat) return -1;
           else if (a.lat > b.lat) return 1;
@@ -198,8 +198,49 @@
           else if (a.lng > b.lng) return 1;
           else return 0;
         }
+*/
+        var prevCollects = 0;
 
+        function distanceBetween (x1,y1,x2,y2) {
+          return Math.sqrt(Math.pow(x1-x2,2) + Math.pow(y1-y2,2));
+        }
 
+        function planRoute () {
+          console.log('planning');
+          partition = {};
+          //partition of collects to agents by distance
+          var myInfo = {id: agent.id, lat: agent.currentPos.lat, lng: agent.currentPos.lng};
+          var allAgents = otherAgents.concat(myInfo);
+          for (var i = 0; i < collects.length; i++) {
+            var closestAgentId = -1;
+            var minDistance = Infinity;
+            var x1 = collects[i].lat;
+            var y1 = collects[i].lng;
+            for (var j = 0; j < allAgents.length; j++) {
+              var currentAgentId = allAgents[j].id;
+              var x2 = allAgents[j].lat;
+              var y2 = allAgents[j].lng;
+              var dist = distanceBetween(x1,y1,x2,y2);
+              if (dist < minDistance) {
+                minDistance = dist;
+                closestAgentId = currentAgentId;
+              }
+            }
+            if (!partition.hasOwnProperty(closestAgentId)) {
+              partition[closestAgentId] = [];
+            }
+            partition[closestAgentId].push(collects[i]);
+          }
+          //Next we need to TSP each agent of the partition
+          //TODO THAT
+          //Finally, we set our flightplan
+          //THIS IS WHERE PAXOS WOULD GO.  DON"T DO A PLAN UNTIL WE HAVE CONSENSUS
+          if (partition.hasOwnProperty(agent.id)) {
+            console.log('new flightplan!');
+            agent.flightplan = partition[agent.id];
+            agent.nextWaypoint = agent.flightplan[0];
+          }
+        }
 
         this.interval5 = setInterval(function() {
           if (agent.enabled) {
@@ -214,6 +255,10 @@
                 }
               }
               updateCollects();
+              if (collects.length != prevCollects) {
+                prevCollects = collects.length;
+                planRoute();
+              }
             });
           }
         }, scanFreq);
@@ -237,6 +282,12 @@
           var postData = {agentId: agent.id, flightplan: agent.flightplan};
           httpPostJSONAsync('/agents/updateFlightplan', postData, function(res) {
             console.log('updatedFlightplan: ' + res);
+          });
+        }
+
+        function collectedWaypoint(oldCollect) {
+          httpGetAsync('/collects/remove/' + oldCollect.lat + '/' + oldCollect.lng, function(res) {
+            console.log('removing collect' + res);
           });
         }
     </script>
