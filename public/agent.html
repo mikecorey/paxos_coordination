@@ -22,8 +22,12 @@
       }
       #infoArea {
         position: absolute;
-        top: 200px;
-        left: 50px;
+        top: 50px;
+        left: 10px;
+        width: 300px;
+        height: 500px;
+        background-color: #FFFFFF;
+        overflow: scroll;
       }
       #agentEnabled {
         position: absolute;
@@ -39,7 +43,7 @@
   </head>
   <body>
     <div id="map"></div>
-    <div id="infoArea"></div>
+    <div id="infoArea">CURRENT PLAN! NONE</div>
     <div id="paxos">
       <input type="text" name="paxosVal"><input type="button" id="sendValue"/><br />
       <p id="paxosDebug">
@@ -150,14 +154,15 @@
         }
 
         var positionUpdateFreq = 300;
-        var comsFreq = 5000;
+        var comsFreq = 500000;
         var statusUpdateFreq = 500;
         var scanFreq = 1000;
-        var checkMailFreq = 400;
+        var checkMailFreq = 40000;
 
         var otherAgents = [];
         var collects = [];
         var messages = [];
+        var partition = {};
 
         this.interval2 = setInterval(function() {
             if (agent.enabled) {
@@ -235,11 +240,17 @@
           //TODO THAT
           //Finally, we set our flightplan
           //THIS IS WHERE PAXOS WOULD GO.  DON"T DO A PLAN UNTIL WE HAVE CONSENSUS
+          //DON"T EXECUTE PLAN!!!!
+          /*
           if (partition.hasOwnProperty(agent.id)) {
             console.log('new flightplan!');
             agent.flightplan = partition[agent.id];
             agent.nextWaypoint = agent.flightplan[0];
+
           }
+          */
+          console.log('new plan!');
+          updateInfoArea();
         }
 
         this.interval5 = setInterval(function() {
@@ -289,6 +300,19 @@
           httpGetAsync('/collects/remove/' + oldCollect.lat + '/' + oldCollect.lng, function(res) {
             console.log('removing collect' + res);
           });
+        }
+
+        function updateInfoArea() {
+          var s = "<ul>";
+          for (k in partition) {
+            s += '<li>' + k + '</l1><ul>';
+            for (var i = 0; i < partition[k].length; i++) {
+              s += '<li>' + partition[k][i].lat + ', ' + partition[k][i].lng + '</li>';
+            }
+            s += '</ul>';
+          }
+          s += '</ul>';
+          document.getElementById('infoArea').innerHTML = s;
         }
     </script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDf85AQTumVMvli31zD4DkgPVc3C06YZtw&callback=initMap&signed_in=true&libraries=geometry" async defer>

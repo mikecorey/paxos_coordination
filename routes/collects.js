@@ -6,7 +6,7 @@ var router = express.Router();
 var model = require('../model/model'); 
 
 var collects = [];
-var viewDistance = 0.048;
+var viewDistance = 0.1;
 
 router.get('/add/:lat/:lng', function(req,res) {
 	var lat = parseFloat(req.params.lat, 10);
@@ -20,12 +20,14 @@ router.get('/add/:lat/:lng', function(req,res) {
 router.get('/remove/:lat/:lng', function(req,res) {
 	var lat = parseFloat(req.params.lat, 10);
 	var lng = parseFloat(req.params.lng, 10);
+	/*
 	for (var i = 0; i < collects.length; i++) {
 		if (collects[i].lat == lat && collects[i].lng == lng) {
 			collects.splice(i, 1);
 		}
-	}
+	}*/
 	winston.log('info', 'Collection removed at (' + lat + ',' + lng + ')');
+	winston.log('info', 'the collection was not removed.  this was disabled');
 	res.status(200).send('ok');
 });
 
