@@ -1,0 +1,16 @@
+<html>
+  <script type="text/javascript" src="httpCalls.js"></script>
+  <body>
+    testing interface
+      <input type="button" id="button1" onclick="runFunc()" value="test"></input>
+    <script>
+      function runFunc() {
+        var url = 'http://localhost:3000/users/testPost';
+        var dat = {parm1:'asd', parm2:'das'};
+        httpPostJSONAsync(url, dat, function (res) {
+          console.log(res);
+        });
+      }
+    </script>
+  </body>
+</html>

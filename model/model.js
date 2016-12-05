@@ -3,6 +3,7 @@ function Agent (id, lat, lng) {
     this.lat = lat;
     this.lng = lng;
     this.mailbox = new Array();
+    this.flightplan = new Array();
 }
 
 function Collect (lat, lng) {

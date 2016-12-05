@@ -36,28 +36,30 @@ function updateAgentLocation() {
   agentMarker.setPosition(agent.currentPos);
 }
 
-var prevCollects = 0; 
-
 function updateCollects() {
-
-  if (prevCollects != collects.length) {
-      while (collectMarkers.length > 0) {
-          var tmp = collectMarkers.pop();
-          tmp.setMap(null);
-      }
-  }
-  prevCollects = collects.length;
   for (var i = 0; i < collects.length; i++) {
-    var marker = new google.maps.Marker({
-      position: new google.maps.LatLng({lat: collects[i].lat, lng: collects[i].lng}),
-      label: "C",
-      map: map
-    });
-    collectMarkers.push(marker);
+    var doDraw = true;
+    for (var j = 0; j < collectMarkers.length; j++) {
+      if (collectMarkers[j].position.lat() == collects[i].lat &&
+          collectMarkers[j].position.lng() == collects[i].lng) {
+            //Already exists.  don't redraw.
+            doDraw = false;
+            console.log('doDraw hit this');
+      }
+    }
+    if (doDraw) {
+      var marker = new google.maps.Marker({
+        position: new google.maps.LatLng({lat: collects[i].lat, lng: collects[i].lng}),
+        label: "C",
+        map: map
+      });
+      collectMarkers.push(marker);
+    }
   }
 }
 
 
 function updateWaypoints() {
   mapLine.setPath(agent.flightplan);
+  pushFlightplan();
 }

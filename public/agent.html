@@ -61,7 +61,7 @@
         var prevAcceptedRound = -1;
         var prevAcceptedValue = "";
 
-        function handleMessage(message) {
+        function handleMessage(message) {/*
           var part = message.split(' ');
           if (part[0] == 'prepare') {
             if (part.length > 1) {
@@ -77,7 +77,8 @@
             console.log('NACK!!! failed to promise!');
           } else {  //broken message!
             console.log('incorrect message format! ' + s);
-          }
+          }*/
+          console.log('got message, not implemented paxos');
         }
 
         //Local agent uses this to initiate a paxos round
@@ -104,12 +105,12 @@
         }
 
         function handlePromise(lastRoundNumber, lastRoundValue) { 
-          console.log('got promise from ')
+          console.log('got promise from ');
         }
         
-        function handleAccept();
+        function handleAccept() {;}
         
-        function handleAccepted();
+        function handleAccepted() {;}
 
 
 
@@ -139,11 +140,13 @@
         var id = agentInitJSON.id;
         
         var agent = new Agent(id, "#00F", waypoints, 200, false);
+        pushFlightplan();
+
 
         /*****Code to intiialize agent END*****/
 
         function toggleAgent() {
-            agent.enabled = !agent.enabled;
+          agent.enabled = !agent.enabled;
         }
 
         var positionUpdateFreq = 300;
@@ -187,10 +190,29 @@
             }
         }, comsFreq);
 
+
+        function comparePosition(a, b) {
+          if (a.lat < b.lat) return -1;
+          else if (a.lat > b.lat) return 1;
+          else if (a.lng < b.lng) return -1;
+          else if (a.lng > b.lng) return 1;
+          else return 0;
+        }
+
+
+
         this.interval5 = setInterval(function() {
           if (agent.enabled) {
-            httpGetAsync('/collects/show/', function(res){
-              collects = JSON.parse(res);
+            httpGetAsync('/collects/show/' + agent.currentPos.lat + '/' + agent.currentPos.lng, function(res){
+              newCollects = JSON.parse(res);
+              collects = collects.concat(newCollects);
+              for (var i = 0; i < collects.length; i++) {
+                for (var j = collects.length -1; j > i; j--) {
+                  if (collects[i].lat == collects[j].lat && collects[i].lng == collects[j].lng) {
+                    collects.splice(j, 1);
+                  }
+                }
+              }
               updateCollects();
             });
           }
@@ -211,6 +233,12 @@
           });
         }, false);
 
+        function pushFlightplan() {         
+          var postData = {agentId: agent.id, flightplan: agent.flightplan};
+          httpPostJSONAsync('/agents/updateFlightplan', postData, function(res) {
+            console.log('updatedFlightplan: ' + res);
+          });
+        }
     </script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDf85AQTumVMvli31zD4DkgPVc3C06YZtw&callback=initMap&signed_in=true&libraries=geometry" async defer>
     </script>

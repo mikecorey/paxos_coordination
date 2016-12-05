@@ -53,6 +53,7 @@
                 for (var i = 0; i < agents.length; i++) {
                     agentLocation = {lat: agents[i].lat, lng: agents[i].lng};
                     addAgentMarker(agentLocation);
+                    addFlightplan(i);
                 }
                 map.setCenter(agentLocation);
                 doUpdateAgents = true;
@@ -81,11 +82,14 @@
                     agents = JSON.parse(res);
                     for (var i = 0; i < agents.length; i++) {
                         var agentLocation = {lat: agents[i].lat, lng: agents[i].lng};
+                        var agentFlightplan = agents[i].flightplan;
                         for (var j = 0; j < agents[i].mailbox.length; j++) {
                             var message = agents[i].mailbox[j];
                             messages = messages.concat(agents[i].mailbox[j]);
                         }
                         updateAgentLocation(i, agentLocation);
+                        //such a bad way to do all this... don't care.  no time to fix'
+                        updateFlightplan(i, agentFlightplan);
                         updateChatLog(messages);
                     }
                 });

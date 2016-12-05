@@ -5,6 +5,8 @@ var map = null;
 
 var agents = [];
 var collects = [];
+var mapLines = [];
+var colors = ['#4286f4','#f4425f','#f4f442','#5ff442','#d942f4','#f3b2ff','#ffb2b2','#b2d7ff','#b2ffb6','#f9ffb2'];
 
 var siteNo = 0;
 
@@ -36,7 +38,7 @@ function addAgentMarker (pos) {
 
 function addFlightplan(agentID) {
   mapLines[agentID] = new google.maps.Polyline({
-    strokeColor: agents[agentID].color,
+    strokeColor: colors[agentID],
     path: agents[agentID].flightplan,
     //icons: tmpicons,
     map: map 
@@ -62,7 +64,6 @@ function updateAgentLocation(agentID, loc) {
   agentMarkers[agentID].setPosition(loc);
 }
 
-function updateWaypoints(agentID) {
-  console.log('updateWaypointsNotImplemented');
-  mapLines[agentID].setPath(agents[agentID].flightplan);
+function updateFlightplan(agentID, flightplan) {
+  mapLines[agentID].setPath(flightplan);
 }
