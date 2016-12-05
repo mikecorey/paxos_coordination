@@ -65,7 +65,8 @@
     <script type="text/javascript" src="paxos.js"></script>
     <script>
         function clickedPaxos() {
-          var val = document.getElementById("paxosVal").value;
+          //var val = document.getElementById("paxosVal").value;
+          var val = agent.id;
           console.log('firing with v: ' + val);
           requestPaxos(val);
         }

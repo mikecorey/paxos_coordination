@@ -44,7 +44,6 @@ function updateCollects() {
           collectMarkers[j].position.lng() == collects[i].lng) {
             //Already exists.  don't redraw.
             doDraw = false;
-            console.log('doDraw hit this');
       }
     }
     if (doDraw) {

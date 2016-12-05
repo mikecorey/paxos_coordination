@@ -5,7 +5,7 @@ var router = express.Router();
 
 var model = require('../model/model'); 
 
-var maxComDistance = .088;
+var maxComDistance = .168;
 
 var agents = [];
 
@@ -100,13 +100,13 @@ router.get('/broadcast/:fromAgent/:message', function(req, res) {
 	var timestamp = new Date();
 	var recipients = [];
 	for (var i = 0; i < agents.length; i++) {
-		if (i != fromAgentIdx) {
+//		if (i != fromAgentIdx) {
 			if (canCommunicate(fromAgentIdx, i)) {
 				var toAgentIdx = agents[i].id;
 				recipients.push(agents[i].id);
 				agents[i].mailbox.push(new model.Message(timestamp, fromAgentId, toAgentIdx, message));
 			}
-		}
+//		}
 	}
 	var responseString = JSON.stringify(recipients);
 	if (recipients.length > 0)
