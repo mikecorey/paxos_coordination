@@ -1,31 +1,45 @@
-var maxRound = 0;
-var proposedValue = "";
-var numAgents = -1;
-var prevAcceptedRound = -1;
-var prevAcceptedValue = "null";
+var nextRound = 1;
+var proposedValue = null;
+var promisedId = -1;
+var numAgents = 0;
+var prevAcceptedRound = null;
+var prevAcceptedValue = "NULL";
+var lastAcceptedId = -1;
+
+var numParticipating = -1; 		//This is set by prepare based on the number of broadcast responses. Used to see how many responses we need.
+var promiseMessages = [];
 
 function handleMessage(message) {
 	messageBody = message.message;
 	var part = messageBody.split(' ');
 	if (part[0] == 'prepare') {
 		if (part.length > 1) {
-			var roundNumber = part[1];
-			handlePrepare(message.fromAgent, roundNumber);
+			var propsalId = part[1];
+			handlePrepare(message.fromAgent, proposalId);
+			return;
 		}
 	} else if (part[0] == 'promise') {
-		if (part.length > 2) {
-			var roundNumber = part[1];
-			var roundValue = part[2];
-			handlePromise(message.fromAgent, roundNumber, roundValue);
+		if (part.length > 3) {
+			var proposalId = part[1];
+			var previoudId = part[2]
+			var acceptedVal = part[3];
+			handlePromise(message.fromAgent, proposalId, previoudId, acceptedVal);
+			return;
 		}
 	} else if (part[0] == 'accept') {
 		if (part.length > 2) {
-			var roundNumber = part[1];
-			var newValue = part[2];
-			handleAccept(message.fromAgent, roundNumber, newValue);
+			var proposalId = part[1];
+			var proposalVal = part[2];
+			handleAccept(message.fromAgent, proposalId, proposalVal);
+			return;
 		}
 	} else if (part[0] == 'accepted') {
-		console.log('got accepted result!');
+		if (part.length > 2) {
+			var proposalId = part[1];
+			var acceptedVal = part[2];
+			handleAccepted(message.fromAgent, propsalId, acceptedVal);
+			return;
+		}
 	} else if (part[0] == 'nack_promise') {
 		handleNackPromise();
 	} else {  //broken message!
@@ -33,75 +47,95 @@ function handleMessage(message) {
 	}
 }
 
-var haveConsensus = false;
-var promiseMessages = [];
-var numParticipating = -1;
+function makeProposalId(roundNumber, agentId) {
+	return roundNumber * 1000 + agentId;	//breaks on > 999 agents
+}
+
+function resolveRoundNumberOfProposalId(proposalId) {
+	return Math.floor(proposalId / 1000); //Tosses out agentId
+}
+
+function resolveAgentOfProposalId(proposalId) {
+	return proposalId % 1000;
+}
+
 
 //Local agent uses this to initiate a paxos round
 function requestPaxos(proposedValue) {
 	promiseMessages = [];
-	haveConsensus = false;
 	numAgents = otherAgents.length + 1;
-	var roundNumber = maxRound * 100 + agent.id;  //Incorporating agent id as lower order digits 
-	prevAcceptedRound = maxRound;
-	prevAcceptedValue = proposedValue;
-	httpGetAsync('/agents/broadcast/' + agent.id + '/prepare ' + roundNumber, function(res) {
+	var proposalId = makeProposalId(nextRound, agent.id);
+	nextRound++;
+	sendPrepare(agent.id, proposalId);
+}
+
+function sendPrepare(sender, proposalId) {
+	httpGetAsync('/agents/broadcast/' + agent.id + '/prepare ' + proposalId, function(res) {
 		console.log('broadcast prepare to ' + res);
 		numParticipating = JSON.parse(res).length;
 	});
-	maxRound++;
 }
 
-function handlePrepare(sender, roundNumber) {
+function handlePrepare(sender, proposalId) {
 	console.log("got prepare request from " + sender);
 	var response = '';
-	if (roundNumber > maxRound) {
-		prevAcceptedRound = Math.floor(roundNumber / 100);
-		response = 'promise ' + prevAcceptedRound + ' ' + prevAcceptedValue;
+	proposalId = resolveRoundNumberOfProposalId(proposalId);
+	if (proposalId >= promisedRound) {
+		promisedId = proposalId;
+		response = 'promise ' + proposalId + ' ' + prevAcceptedRound + ' ' + prevAcceptedValue;
 	} else {
-		response = 'nack_promise';  //SHOULD WE NACK??? //TODO
+		response = 'nack_promise';  //SHOULD WE NACK??? //TODO IF NACK > PROMISE && AWAITING 0
 	}
-	httpGetAsync('/agents/communicate/' + agent.id + '/' + sender + '/' + response, function(res) {
-		console.log('sent promise to ' + sender + ' ' + res);
+	sendPromise(agentId, sender, response);	//TODO Not good form
+}
+
+function sendPromise(fromAgent, toAgent, response) {
+	httpGetAsync('/agents/communicate/' + fromAgent + '/' + toAgent + '/' + response, function(res) {
+		console.log('sending promise to ' + toAgent + ': ' + res);
 	});
 }
 
 function handleNackPromise(sender) {
-	numParticipating--;
-	console.log('NACK!!! failed to promise!');
-	if (haveConsensus && numParticipating == 0) {
-		requestAccept();
-	}
+	console.log('nack_promise from ' + sender);
 }
 
-function handlePromise(sender, roundNumber, roundValue) { 
+function handlePromise(sender, proposalId, previoudId, acceptedVal) { 
 	console.log("got promise result from " + sender);
-	numParticipating--;
-	promiseMessages.push({sender: sender, n: roundNumber, v: roundValue});
-	console.log('commited is ' + promiseMessages.length);
-	if (promiseMessages.length >= Math.floor(numAgents / 2) + 1) {
-		console.log('have consensus');
-		haveConsensus = true;
+	promiseMessages.push({sender: sender, n: previoudId, v: acceptedVal});
+	if (previoudId > lastAcceptedId) {
+		lastAcceptedId = previoudId;
+		if (acceptedVal != "NULL") {
+			proposedValue = acceptedVal;
+		}
 	}
-	if (haveConsensus && numParticipating == 0) {
-			requestAccept();
+	console.log('commited is ' + promiseMessages.length);
+	if (promiseMessages.length == Math.floor(numAgents / 2) + 1) {
+		console.log('reached consensus');
+		sendAccept(proposalId, proposedValue);
 	}
 }
 
-//run once we have all responses.
-function requestAccept() {
-	var roundNumber = maxRound * 100 + agent.id;
-	var vMax = -1;
-	for (var i = 0; i < promiseMessages.length; i++) {
-		if (promiseMessages.v > vMax) vMax = promiseMessages.v;
-	}
-	httpGetAsync('/agents/broadcast/' + agent.id + '/accept ' + roundNumber + ' ' + vMax, function (res) {
+function sendAccept(proposalId, proposedValue) {
+	httpGetAsync('/agents/broadcast/' + agent.id + '/accept ' + proposalId + ' ' + proposedValue, function (res) {
 		console.log('broadcast accept message to ' + res);
 	});
 }
 
-function handleAccept(sender, roundNumber, roundValue) {
-	console.log('got accept request from ' + sender + ' #=' + roundNumber + ' v=' + roundValue);
+function handleAccept(sender, proposalId, acceptVal) {
+	console.log('got accept request from ' + sender + ' #=' + proposalId + ' v=' + val);
+	promisedId = proposalId;
+	acceptedId = proposalId;
+	acceptedVal = acceptVal;
+	sendAccepted(proposalId, acceptedVal);
 }
 
-function handleAccepted() {;}
+function sendAccepted(proposalId, acceptedVal) {
+	httpGetAsync('/agents/broadcast/' + agent.id + '/accepted ' + proposalId + ' ' + acceptedVal, function (res) {
+		console.log('broadcast accepted message to ' + res);
+	});
+}
+
+
+function handleAccepted(sender, roundNumber, roundValue) {
+	console.log('got accept request from ' + sender + ' #=' + roundNumber + ' v=' + roundValue);
+}
