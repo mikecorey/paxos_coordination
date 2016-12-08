@@ -15,7 +15,7 @@
       }
       #agentId {
         position: absolute;
-      	top: 800px;
+      	top: 600px;
       	left: 20px;
       }
       #toggleButton {
@@ -64,9 +64,13 @@
     <script type="text/javascript" src="map.js"></script>
     <script type="text/javascript" src="paxos.js"></script>
     <script>
+        var multi = false;
+
         function clickedPaxos() {
-          var val = document.getElementById("paxosVal").value;
+          //var val = document.getElementById("paxosVal").value;
           //var val = agent.id;
+          planRoute();
+          var val = JSON.stringify(partition);
           console.log('firing with v: ' + val);
           requestPaxos(val);
         }
@@ -134,23 +138,6 @@
             }
         }, statusUpdateFreq)
                 
-        this.interval4 = setInterval(function() {
-            if (agent.enabled) {
-                httpGetAsync('/agents/broadcast/' + agent.id + '/hi from ' + agent.id, function(res) {
-                  console.log('sent message to ' + res);
-                });
-            }
-        }, comsFreq);
-
-/* confirm this isn't used then delete'
-        function comparePosition(a, b) {
-          if (a.lat < b.lat) return -1;
-          else if (a.lat > b.lat) return 1;
-          else if (a.lng < b.lng) return -1;
-          else if (a.lng > b.lng) return 1;
-          else return 0;
-        }
-*/
         var prevCollects = 0;
 
         function distanceBetween (x1,y1,x2,y2) {
@@ -196,8 +183,8 @@
 
           }
           */
-          console.log('new plan!');
-          updateInfoArea();
+          //console.log('new plan!');
+          //updateInfoArea();
         }
 
         this.interval5 = setInterval(function() {
@@ -215,7 +202,8 @@
               updateCollects();
               if (collects.length != prevCollects) {
                 prevCollects = collects.length;
-                planRoute();
+//                planRoute();
+                console.log('remember: Not automatically replanning.')
               }
             });
           }
@@ -264,6 +252,23 @@
           }
           s += '</ul>';
           document.getElementById('infoArea').innerHTML = s;
+        }
+/*
+        function commitPlan(val) {
+          console.log('set new val '  + val);
+          document.getElementById("paxosVal").value = val;
+        }
+*/
+
+        function commitPlan(plan) {
+          partition = JSON.parse(plan);
+          if (partition.hasOwnProperty(agent.id)) {
+            console.log('new flightplan!');
+            agent.flightplan = partition[agent.id];
+            agent.nextWaypoint = agent.flightplan[0];
+          }
+          updateWaypoints();
+          updateInfoArea();
         }
     </script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDf85AQTumVMvli31zD4DkgPVc3C06YZtw&callback=initMap&signed_in=true&libraries=geometry" async defer>

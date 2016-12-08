@@ -59,6 +59,6 @@ function updateCollects() {
 
 
 function updateWaypoints() {
-  mapLine.setPath(agent.flightplan);
+  mapLine.setPath([agent.currentPos].concat(agent.flightplan));
   pushFlightplan();
 }

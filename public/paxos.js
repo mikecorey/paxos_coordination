@@ -6,7 +6,6 @@ var prevAcceptedRound = null;
 var prevAcceptedValue = "NULL";
 var lastAcceptedId = -1;
 
-var numParticipating = -1; 		//This is set by prepare based on the number of broadcast responses. Used to see how many responses we need.
 var promiseMessages = [];
 
 function handleMessage(message) {
@@ -43,7 +42,29 @@ function handleMessage(message) {
 		}
 	} else if (part[0] == 'nack_promise') {
 		handleNackPromise(message.fromAgent, part[1], part[2]);
-	} else {  //broken message!
+	} else if (part[0] == 'm_accept') {
+		if (part.length > 3) {
+			var proposalId = part[1];
+			var instanceId = part[2];
+			var proposalVal = part[3];
+			handleMultiAccept(message.fromAgent, proposalId, instanceId, proposalVal);
+			return;
+		}
+	} else if (part[0] == 'm_accepted') {
+		if (part.length > 3) {
+			var proposalId = part[1];
+			var instanceId = part[2];
+			var acceptedVal = part[3];
+			handleMultiAccepted(message.fromAgent, proposalId, instanceId, acceptedVal);
+		}
+	} else if (part[0] == 'm_nack_accept') {
+		if (part.length > 2) {
+			var proposalId = part[1];
+			var instanceId = part[2];
+			handleMultiNackAccept(message.fromAgent, proposalId, instanceId);
+		}
+	}
+	else {  //broken message!
 		console.log('incorrect message format! ' + messageBody);
 	}
 }
@@ -60,35 +81,35 @@ function resolveAgentOfProposalId(proposalId) {
 	return proposalId % 1000;
 }
 
-
-//Local agent uses this to initiate a paxos round
 function requestPaxos(val) {
-	console.log('proposing to commit ' + val);
-	proposedValue = val;
-	promiseMessages = [];
-	numAgents = otherAgents.length + 1;
-	var proposalId = makeProposalId(nextRound, agent.id);
-	nextRound++;
-	sendPrepare(agent.id, proposalId);
+	console.log('proposing to commit ' + val.length);
+	if (transactions.length == 0) {
+		proposedValue = val;
+		promiseMessages = [];
+		numAgents = otherAgents.length + 1;
+		var proposalId = makeProposalId(nextRound, agent.id);
+		nextRound++;
+		sendPrepare(agent.id, proposalId);
+	} else {
+		sendMultiAccept(lastAcceptedId, transactions.length, val);
+	}
 }
 
 function sendPrepare(sender, proposalId) {
-	httpGetAsync('/agents/broadcast/' + agent.id + '/prepare ' + proposalId, function(res) {
-		console.log('broadcast prepare to ' + res);
-		numParticipating = JSON.parse(res).length;
-	});
+	message = 'prepare ' + proposalId;
+	broadcastMessage(agent.id, message, 'broadcast prepare to');
 }
 
 function handlePrepare(sender, proposalId) {
+	transactions = [];
 	console.log("got prepare request from " + sender);
 	var response = '';
-	//proposalId = resolveRoundNumberOfProposalId(proposalId);
 	console.log("DEBUG " + proposalId + ' ' + promisedId);
 	if (proposalId >= promisedId) {
 		promisedId = proposalId;
 		response = 'promise ' + proposalId + ' ' + prevAcceptedRound + ' ' + prevAcceptedValue;
 	} else {
-		response = 'nack_promise ' + proposalId + ' ' + promisedId;  //SHOULD WE NACK??? //TODO IF NACK > PROMISE && AWAITING 0
+		response = 'nack_promise ' + proposalId + ' ' + promisedId;
 	}
 	sendPromise(agent.id, sender, response);	//TODO Not good form
 }
@@ -116,31 +137,91 @@ function handlePromise(sender, proposalId, previoudId, acceptedVal) {
 	console.log('commited is ' + promiseMessages.length);
 	if (promiseMessages.length == Math.floor(numAgents / 2) + 1) {
 		console.log('reached consensus');
-		sendAccept(proposalId, proposedValue);
+		if (multi) {
+			sendMultiAccept(proposalId, 0, proposedValue)
+		} else {
+			sendAccept(proposalId, proposedValue);
+		}
 	}
 }
 
 function sendAccept(proposalId, proposedValue) {
-	httpGetAsync('/agents/broadcast/' + agent.id + '/accept ' + proposalId + ' ' + proposedValue, function (res) {
-		console.log('broadcast accept message to ' + res);
-	});
+	message = 'accept ' + proposalId + ' ' + proposedValue;
+	broadcastMessage(agent.id, message, 'broadcast accept to');
 }
 
 function handleAccept(sender, proposalId, acceptVal) {
-	console.log('got accept request from ' + sender + ' #=' + proposalId + ' v=' + acceptVal);
+	console.log('got accept request from ' + sender + ' #=' + proposalId + ' |v|=' + acceptVal.length);
 	promisedId = proposalId;
-	acceptedId = proposalId;
+	lastAcceptedId = proposalId;
 	acceptedVal = acceptVal;
 	sendAccepted(proposalId, acceptedVal);
 }
 
-function sendAccepted(proposalId, acceptedVal) {
-	httpGetAsync('/agents/broadcast/' + agent.id + '/accepted ' + proposalId + ' ' + acceptedVal, function (res) {
-		console.log('broadcast accepted message to ' + res);
-	});
+/****************START MULTI PAXOS ADD ON ***************/
+var transactions = [];
+
+function sendMultiAccept(proposalId, instanceId, proposedValue) {
+	message = 'm_accept ' + proposalId + ' ' + instanceId + ' ' + proposedValue;
+	broadcastMessage(agent.id, message, 'broadcast accept to');
+}
+
+function handleMultiAccept(sender, proposalId, instanceId, acceptVal) {
+	console.log('got multiAccept request from ' + sender + ' p#=' + proposalId + ' i#=' + instanceId + ' |v|=' + acceptVal.length);
+	if (instanceId == transactions.length) {
+		promisedId = proposalId;
+		lastAcceptedId = proposalId;
+		acceptedVal = acceptVal;
+		sendMultiAccepted(proposalId, instanceId, acceptedVal);
+	} else {
+		sendMultiNackAccept(proposalId, instanceId);
+	}
+}
+
+function sendMultiAccepted(proposalId, instanceId, acceptedVal) {
+	message = 'm_accepted ' + proposalId + ' ' + instanceId + ' ' + acceptedVal;
+	broadcastMessage(agent.id, message, 'broadcast multi-accept message to ');
+}
+
+function sendMultiNackAccept(proposalId, instanceId) {
+	message = 'm_nack_accept ' + proposalId + ' ' + instanceId;
+	broadcastMessage(agent.id, message, 'broadcast nack-multi-accept to ');
+}
+
+function handleMultiAccepted (sender, proposalId, instanceId, acceptVal) {
+	console.log("got accepted message from " + sender + " with length " + acceptVal.length)
+	transactions.push(acceptVal);
+	commitPlan(acceptVal);
+}
+
+function handleMultiNackAccept (sender, propsalId, instanceId) {
+	transactions.splice(instanceId);
+	if (transactions.length > 0) {
+		commitPlan(transactions.length - 1);
+	} else {
+		commitPlan("");
+	}
+	transactions = [];
 }
 
 
+
+
+/************************** END MULTI PAXOS ADD ON ********/
+
+function sendAccepted(proposalId, acceptedVal) {
+	message = 'accepted ' + proposalId + ' ' + acceptedVal;
+	broadcastMessage(agent.id, message, 'broadcast accepted message to');
+}
+
 function handleAccepted(sender, roundNumber, roundValue) {
 	console.log('!!! got accepted value from ' + sender + ' #=' + roundNumber + ' v=' + roundValue);
+	commitPlan(roundValue);
+}
+
+function broadcastMessage(fromAgent, message, responsePreamble) {
+	var postData = {fromAgent: fromAgent, message: message};
+	httpPostJSONAsync('/agents/broadcast', postData, function(res) {
+	console.log(responsePreamble + ' ' + res);
+	});
 }

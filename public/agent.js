@@ -29,9 +29,9 @@ function Agent(id, color, flightplan, speed, enabled) {
 		var nextGoogleMapsLatLng = new google.maps.LatLng(me.nextWaypoint);
     if (isAtWaypoint(lastGoogleMapsLatLng, nextGoogleMapsLatLng)) {
       var requestRemove = me.flightplan.shift();
-			collectedWaypoint(requestRemove);
-      updateWaypoints();
-      if (me.flightplan.length > 1) {
+      if (me.flightplan.length > 0) {
+				collectedWaypoint(requestRemove);
+				updateWaypoints();
         me.nextWaypoint = me.flightplan[1];
 			  nextGoogleMapsLatLng = new google.maps.LatLng(me.nextWaypoint);
       } else {

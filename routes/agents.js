@@ -125,6 +125,25 @@ router.get('/updateLoc/:agentId/:lat/:lng', function(req,res) {
 	res.status(200).send('ok');
 });
 
+router.post('/broadcast', function(req, res) {
+	var fromAgentId = req.body.fromAgent;
+	var message = req.body.message;
+	var fromAgentIdx = getAgentIdx(fromAgentId);
+	var timestamp = new Date();
+	var recipients = [];
+	for (var i = 0; i < agents.length; i++) {
+			if (canCommunicate(fromAgentIdx, i)) {
+				var toAgentIdx = agents[i].id;
+				recipients.push(agents[i].id);
+				agents[i].mailbox.push(new model.Message(timestamp, fromAgentId, toAgentIdx, message));
+			}
+	}
+	var responseString = JSON.stringify(recipients);
+	if (recipients.length > 0)
+		winston.log('info', 'bcast from ' + fromAgentId + ' to ' + responseString + ': ' + message);
+	res.send(responseString);
+});
+
 router.post('/updateFlightplan', function(req, res) {
   var agentId = req.body.agentId;
   var flightplan = req.body.flightplan;
