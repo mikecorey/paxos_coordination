@@ -10,7 +10,7 @@ var promiseMessages = [];
 
 function handleMessage(message) {
 	messageBody = message.message;
-	console.log('message: ' + messageBody);
+//	console.log('message: ' + messageBody);
 	var part = messageBody.split(' ');
 	if (part[0] == 'prepare') {
 		if (part.length > 1) {
@@ -215,7 +215,7 @@ function sendAccepted(proposalId, acceptedVal) {
 }
 
 function handleAccepted(sender, roundNumber, roundValue) {
-	console.log('!!! got accepted value from ' + sender + ' #=' + roundNumber + ' v=' + roundValue);
+	console.log('!!! got accepted value from ' + sender + ' #=' + roundNumber + ' |v|=' + roundValue.length);
 	commitPlan(roundValue);
 }
 

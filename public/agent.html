@@ -41,8 +41,8 @@
       }
       #paxos {
         position: absolute;
-        top: 30px;
-        left: 50%;
+        top: 500px;
+        left: 120px;
       }
     </style>
   </head>
@@ -51,10 +51,7 @@
     <div id="infoArea">CURRENT PLAN: RANDOM</div>
     <div id="agentId"></div>
     <div id="paxos">
-      <input type="text" id="paxosVal"><input type="button" onclick="clickedPaxos()" value="submit" id="sendValue"/><br />
-      <p id="paxosDebug">
-        not started
-      </p>
+      <input type="button" onclick="clickedPaxos()" value="Plan" id="sendValue"/><br />
     </div>
     <div id="agentEnabled">
       <input type="button" id="toggleAgent" onclick="toggleAgent()" value="Enabled?"></input>
@@ -108,6 +105,9 @@
 
         function toggleAgent() {
           agent.enabled = !agent.enabled;
+          httpGetAsync('/agents/getMessages/' + agent.id + '/flush', function(res) {
+            console.log('purged messages');
+          });
         }
 
         var positionUpdateFreq = 300;
