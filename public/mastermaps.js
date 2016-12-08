@@ -65,5 +65,7 @@ function updateAgentLocation(agentID, loc) {
 }
 
 function updateFlightplan(agentID, flightplan) {
-  mapLines[agentID].setPath(flightplan);
+  var tmpLoc = [{lat: agentMarkers[agentID].getPosition().lat(),
+                lng: agentMarkers[agentID].getPosition().lng()}];
+  mapLines[agentID].setPath(tmpLoc.concat(flightplan));
 }

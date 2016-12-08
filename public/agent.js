@@ -32,7 +32,7 @@ function Agent(id, color, flightplan, speed, enabled) {
       if (me.flightplan.length > 0) {
 				collectedWaypoint(requestRemove);
 				updateWaypoints();
-        me.nextWaypoint = me.flightplan[1];
+        me.nextWaypoint = me.flightplan[0];
 			  nextGoogleMapsLatLng = new google.maps.LatLng(me.nextWaypoint);
       } else {
         nextGoogleMapsLatLng = new google.maps.LatLng(me.currentPos);
