@@ -11,10 +11,11 @@ var promiseMessages = [];
 
 function handleMessage(message) {
 	messageBody = message.message;
+	console.log('message: ' + messageBody);
 	var part = messageBody.split(' ');
 	if (part[0] == 'prepare') {
 		if (part.length > 1) {
-			var propsalId = part[1];
+			var proposalId = part[1];
 			handlePrepare(message.fromAgent, proposalId);
 			return;
 		}
@@ -37,11 +38,11 @@ function handleMessage(message) {
 		if (part.length > 2) {
 			var proposalId = part[1];
 			var acceptedVal = part[2];
-			handleAccepted(message.fromAgent, propsalId, acceptedVal);
+			handleAccepted(message.fromAgent, proposalId, acceptedVal);
 			return;
 		}
 	} else if (part[0] == 'nack_promise') {
-		handleNackPromise();
+		handleNackPromise(message.fromAgent, part[1], part[2]);
 	} else {  //broken message!
 		console.log('incorrect message format! ' + messageBody);
 	}
@@ -61,7 +62,9 @@ function resolveAgentOfProposalId(proposalId) {
 
 
 //Local agent uses this to initiate a paxos round
-function requestPaxos(proposedValue) {
+function requestPaxos(val) {
+	console.log('proposing to commit ' + val);
+	proposedValue = val;
 	promiseMessages = [];
 	numAgents = otherAgents.length + 1;
 	var proposalId = makeProposalId(nextRound, agent.id);
@@ -79,30 +82,32 @@ function sendPrepare(sender, proposalId) {
 function handlePrepare(sender, proposalId) {
 	console.log("got prepare request from " + sender);
 	var response = '';
-	proposalId = resolveRoundNumberOfProposalId(proposalId);
-	if (proposalId >= promisedRound) {
+	//proposalId = resolveRoundNumberOfProposalId(proposalId);
+	console.log("DEBUG " + proposalId + ' ' + promisedId);
+	if (proposalId >= promisedId) {
 		promisedId = proposalId;
 		response = 'promise ' + proposalId + ' ' + prevAcceptedRound + ' ' + prevAcceptedValue;
 	} else {
-		response = 'nack_promise';  //SHOULD WE NACK??? //TODO IF NACK > PROMISE && AWAITING 0
+		response = 'nack_promise ' + proposalId + ' ' + promisedId;  //SHOULD WE NACK??? //TODO IF NACK > PROMISE && AWAITING 0
 	}
-	sendPromise(agentId, sender, response);	//TODO Not good form
+	sendPromise(agent.id, sender, response);	//TODO Not good form
 }
 
 function sendPromise(fromAgent, toAgent, response) {
 	httpGetAsync('/agents/communicate/' + fromAgent + '/' + toAgent + '/' + response, function(res) {
-		console.log('sending promise to ' + toAgent + ': ' + res);
+		console.log('sending ' + response.split(' ')[0] + ' response to ' + toAgent + ': ' + res);
 	});
 }
 
-function handleNackPromise(sender) {
-	console.log('nack_promise from ' + sender);
+function handleNackPromise(sender, proposalId, promisedId) {
+	console.log('got nack_promise from ' + sender + ' proposalId=' + proposalId + ' promisedId=' + promisedId);
 }
 
 function handlePromise(sender, proposalId, previoudId, acceptedVal) { 
 	console.log("got promise result from " + sender);
 	promiseMessages.push({sender: sender, n: previoudId, v: acceptedVal});
 	if (previoudId > lastAcceptedId) {
+		console.log('have newer value.  discarding proposed.');
 		lastAcceptedId = previoudId;
 		if (acceptedVal != "NULL") {
 			proposedValue = acceptedVal;
@@ -122,7 +127,7 @@ function sendAccept(proposalId, proposedValue) {
 }
 
 function handleAccept(sender, proposalId, acceptVal) {
-	console.log('got accept request from ' + sender + ' #=' + proposalId + ' v=' + val);
+	console.log('got accept request from ' + sender + ' #=' + proposalId + ' v=' + acceptVal);
 	promisedId = proposalId;
 	acceptedId = proposalId;
 	acceptedVal = acceptVal;
@@ -137,5 +142,5 @@ function sendAccepted(proposalId, acceptedVal) {
 
 
 function handleAccepted(sender, roundNumber, roundValue) {
-	console.log('got accept request from ' + sender + ' #=' + roundNumber + ' v=' + roundValue);
+	console.log('!!! got accepted value from ' + sender + ' #=' + roundNumber + ' v=' + roundValue);
 }
